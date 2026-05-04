@@ -3,7 +3,7 @@
  * Found working solution from stackOverlow
  * Link: https://stackoverflow.com/questions/79875229/mongodb-connection-failed-error-querysrv-econnrefused
  */
-const dns = require( "node:dns/promises");
+const dns = require("node:dns/promises");
 dns.setServers(["1.1.1.1", "1.0.0.1"]);
 
 require('./utils.js');
@@ -30,7 +30,7 @@ const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 const node_session_secret = process.env.NODE_SESSION_SECRET;
 /* Secret section end */
 
-const {database} = include('databaseConnection');
+const { database } = include('databaseConnection');
 const userCollection = database.db(mongodb_database).collection('users');
 
 var mongoStore = MongoStore.create({
@@ -88,7 +88,7 @@ app.get('/signup', (req, res) => {
     </form>`);
 });
 
-app.post('/signupSubmit', async(req, res) => {
+app.post('/signupSubmit', async (req, res) => {
     let html = "";
     if (!req.body.name || req.body.name == null) {
         html += `Name is required. <br/>`;
@@ -114,18 +114,19 @@ app.post('/signupSubmit', async(req, res) => {
 
         if (validationResult.error != null) {
             console.log(validationResult.error);
-            html+="Name, email, or password given is not valid<br/>";
+            html += "Name, email, or password given is not valid<br/>";
         }
         else {
             let hashedPassword = await bcrypt.hash(password, saltRounds);
             await userCollection.insertOne({ name: name, email: email, password: hashedPassword });
             req.session.name = name;
             req.session.email = email;
+            req.session.maxAge = expireTime;
             req.session.password = hashedPassword;
 
             return res.redirect('/members');
         }
-        
+
     }
     res.send(html + `<a href = "/signup">Try again</a>`);
 });
@@ -141,34 +142,34 @@ app.get('/login', (req, res) => {
         </form>`);
 });
 
-app.post('/loginSubmit', async(req, res) => {
+app.post('/loginSubmit', async (req, res) => {
     let email = req.body.email;
     let password = req.body.password;
     const schema = Joi.string().max(30).required();
-	const validationResult = schema.validate(email);
-    
+    const validationResult = schema.validate(email);
+
     if (validationResult.error != null) {
         res.send(`Invalid email/password combination<br/><a href = "/login">Try again</a>`);
         return;
-	}
+    }
 
-    const result = await userCollection.find({email: email}).project({name: 1, password: 1}).toArray();
-    
+    const result = await userCollection.find({ email: email }).project({ name: 1, password: 1 }).toArray();
+
     if (result.length != 1) {
         res.send(`Invalid email/password combination<br/><a href = "/login">Try again</a>`);
-		return;
-	}
+        return;
+    }
     if (await bcrypt.compare(password, result[0].password)) {
-		req.session.authenticated = true;
-		req.session.name = result[0].name;
-		req.session.cookie.maxAge = expireTime;
+        req.session.authenticated = true;
+        req.session.name = result[0].name;
+        req.session.cookie.maxAge = expireTime;
 
-		res.redirect('/members');
-		return;
-	}
-	else {
-		res.send(`Invalid email/password combination<br/><a href = "/login">Try again</a>`);
-		return;
+        res.redirect('/members');
+        return;
+    }
+    else {
+        res.send(`Invalid email/password combination<br/><a href = "/login">Try again</a>`);
+        return;
     }
 });
 
