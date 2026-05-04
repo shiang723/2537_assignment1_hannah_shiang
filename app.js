@@ -123,7 +123,7 @@ app.post('/signupSubmit', async(req, res) => {
             req.session.email = email;
             req.session.password = hashedPassword;
 
-        res.redirect('/members');
+            return res.redirect('/members');
         }
         
     }
@@ -154,7 +154,6 @@ app.post('/loginSubmit', async(req, res) => {
 
     const result = await userCollection.find({email: email}).project({name: 1, password: 1}).toArray();
     
-    console.log(result);
     if (result.length != 1) {
         res.send(`Invalid email/password combination<br/><a href = "/login">Try again</a>`);
 		return;
